@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const app = express();
 const port = 3000;
 
-// Reemplaza 'TU_API_KEY' con la clave que obtuviste en el Paso 1
+// Reemplazamos la clave hardcodeada por la variable de entorno
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Middleware para servir archivos estáticos (HTML, CSS, JS)
@@ -20,7 +20,22 @@ app.post('/chat', async (req, res) => {
 
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const result = await model.generateContent(userMessage);
+
+        // Añadimos un prompt inicial para darle contexto a la IA
+        const chat = model.startChat({
+            history: [
+                {
+                    role: "user",
+                    parts: "Eres un asistente experto en problemas y reparaciones sencillas del hogar en Argentina. Responde de forma concisa y útil. No te salgas de este tema."
+                },
+                {
+                    role: "model",
+                    parts: "¡Hola! Soy tu asistente de IA para problemas del hogar. ¿En qué puedo ayudarte?"
+                }
+            ]
+        });
+
+        const result = await chat.sendMessage(userMessage);
         const botResponse = result.response.text();
 
         // Envía la respuesta del bot de IA al cliente
