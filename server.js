@@ -1,31 +1,25 @@
 const express = require('express');
 const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { v4: uuidv4 } = require('uuid'); // Importamos la librería uuid
+const { v4: uuidv4 } = require('uuid');
 const app = express();
 const port = 3000;
 
 // Objeto para almacenar el historial de chat de cada sesión
 const sessions = {};
 
-// Reemplazamos la clave hardcodeada por la variable de entorno
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Middleware para servir archivos estáticos (HTML, CSS, JS)
 app.use(express.static('public'));
-
-// Middleware para procesar JSON en el cuerpo de las solicitudes
 app.use(express.json());
 
-// Nueva ruta para iniciar una sesión de chat y obtener un ID
 app.get('/start-session', (req, res) => {
     const sessionId = uuidv4();
-    sessions[sessionId] = []; // Inicializamos el historial para esta nueva sesión
+    sessions[sessionId] = [];
     console.log(`Nueva sesión iniciada: ${sessionId}`);
     res.json({ sessionId: sessionId });
 });
 
-// Ruta para la comunicación con el bot de IA
 app.post('/chat', async (req, res) => {
     const { sessionId, message } = req.body;
     console.log(`Mensaje del usuario en sesión ${sessionId}: ${message}`);
@@ -34,7 +28,6 @@ app.post('/chat', async (req, res) => {
         return res.status(400).json({ response: 'ID de sesión inválido o no encontrado.' });
     }
 
-    // Obtenemos el historial de la sesión actual
     const history = sessions[sessionId];
 
     try {
@@ -43,15 +36,19 @@ app.post('/chat', async (req, res) => {
             systemInstruction: "Eres un asistente experto en problemas del hogar en Argentina. Responde de forma extremadamente concisa y útil, usando un lenguaje sencillo. Tu objetivo es dar una sola solución clara sin añadir información extra. No te salgas de este tema."
         });
 
-        // Agregamos el mensaje del usuario al historial
-        history.push({ role: 'user', parts: message });
+        // Corregido: La API espera un array de objetos para 'parts'
+        history.push({ role: 'user', parts: [{ text: message }] });
 
         const chat = model.startChat({ history: history });
-        const result = await chat.sendMessage(message);
-        const botResponse = result.response.text();
+        const result = await chat.sendMessageStream(message);
 
-        // Agregamos la respuesta del bot al historial
-        history.push({ role: 'model', parts: botResponse });
+        let botResponse = '';
+        for await (const chunk of result.stream) {
+            botResponse += chunk.text;
+        }
+
+        // Corregido: La API espera un array de objetos para 'parts'
+        history.push({ role: 'model', parts: [{ text: botResponse }] });
 
         res.json({ response: botResponse });
     } catch (error) {
