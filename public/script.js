@@ -1,6 +1,6 @@
-let sessionId = null; // Variable para guardar el ID de sesión
+let sessionId = null;
+let imageFile = null;
 
-// Función para mostrar mensajes en la interfaz
 function appendMessage(sender, message) {
     const chatMessages = document.getElementById('chat-messages');
     const messageDiv = document.createElement('div');
@@ -14,10 +14,34 @@ function appendMessage(sender, message) {
 async function sendMessage() {
     const inputElement = document.getElementById('user-input');
     const message = inputElement.value;
-    if (message.trim() === '') return;
+    const imageData = imageFile;
 
-    appendMessage('user', message);
+    if (message.trim() === '' && !imageData) return;
+
+    if (message.trim() !== '') {
+        appendMessage('user', message);
+    }
+    if (imageData) {
+        // Muestra una imagen miniatura en el chat
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.maxWidth = '100px';
+            img.style.borderRadius = '8px';
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'user-message');
+            messageDiv.appendChild(img);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        };
+        reader.readAsDataURL(imageData);
+    }
+
     inputElement.value = '';
+    document.getElementById('file-upload').value = '';
+    imageFile = null;
 
     try {
         const response = await fetch('/chat', {
@@ -25,7 +49,7 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ sessionId, message }), // Enviamos el ID de sesión y el mensaje
+            body: JSON.stringify({ sessionId, message, imageData: imageData ? await toBase64(imageData) : null }),
         });
 
         const data = await response.json();
@@ -36,7 +60,16 @@ async function sendMessage() {
     }
 }
 
-// Función para iniciar la sesión
+// Convierte el archivo a Base64 para enviarlo al servidor
+function toBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
 async function fetchSessionId() {
     try {
         const response = await fetch('/start-session');
@@ -48,7 +81,6 @@ async function fetchSessionId() {
     }
 }
 
-// Asignar el evento al botón de enviar
 document.getElementById('send-button').addEventListener('click', sendMessage);
 document.getElementById('user-input').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -56,5 +88,8 @@ document.getElementById('user-input').addEventListener('keypress', (e) => {
     }
 });
 
-// Iniciar una nueva sesión cuando la página carga
+document.getElementById('file-upload').addEventListener('change', (e) => {
+    imageFile = e.target.files[0];
+});
+
 fetchSessionId();
