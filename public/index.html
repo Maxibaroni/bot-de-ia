@@ -1,29 +1,42 @@
+ Asistente de programación
+
+¡Absolutamente! Podemos cambiar ese icono para que sea más intuitivo. Vamos a modificar tu archivo index.html para usar un emoji de cámara en lugar del genérico de imagen.
+
+Paso 1: Modificar public/index.html
+
+Abre tu archivo public/index.html y simplemente reemplaza el emoji 🖼️ dentro de la etiqueta <label> por el emoji de una cámara 📸.
+
+El código debería quedar así:
+
+public/index.html
+
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot de IA para el Hogar</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="/manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bot de IA para el Hogar</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="/manifest.json">
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>Bot de IA para Hogar</h1>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-            <div class="message bot-message">¡Hola! Soy tu asistente de IA para problemas del hogar. ¿En qué puedo ayudarte?</div>
-        </div>
-        <div class="chat-input">
-            <label for="file-upload" class="file-upload-label">
-                🖼️
-            </label>
-            <input type="file" id="file-upload" accept="image/*" style="display: none;">
-            <input type="text" id="user-input" placeholder="Escribe tu mensaje...">
-            <button id="send-button">Enviar</button>
-        </div>
-    </div>
-    <script src="script.js"></script>
+<div class="chat-container">
+<div class="chat-header">
+<h1>Bot de IA para Hogar</h1>
+</div>
+<div class="chat-messages" id="chat-messages">
+<div class="message bot-message">¡Hola! Soy tu asistente de IA para problemas del hogar. ¿En qué puedo ayudarte?</div>
+</div>
+<div class="chat-input">
+<label for="file-upload" class="file-upload-label">
+📸
+</label>
+<input type="file" id="file-upload" accept="image/*" style="display: none;">
+<input type="text" id="user-input" placeholder="Escribe tu mensaje...">
+<button id="send-button">Enviar</button>
+</div>
+</div>
+<script src="script.js"></script>
 </body>
 </html>
