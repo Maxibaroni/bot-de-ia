@@ -34,14 +34,14 @@ app.post('/chat', async (req, res) => {
             systemInstruction: "Eres un asistente experto en problemas del hogar en Argentina. Responde de forma extremadamente concisa y útil, usando un lenguaje sencillo. Tu objetivo es dar una sola solución clara sin añadir información extra. No te salgas de este tema."
         });
 
+        // Corregido: La API espera un array de objetos para 'parts'
         history.push({ role: 'user', parts: [{ text: message }] });
 
         const chat = model.startChat({ history: history });
-        
-        // Simplificamos la llamada a la API
         const result = await chat.sendMessage(message);
         const botResponse = result.response.text();
 
+        // Corregido: La API espera un array de objetos para 'parts'
         history.push({ role: 'model', parts: [{ text: botResponse }] });
 
         res.json({ response: botResponse });
