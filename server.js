@@ -5,7 +5,7 @@ const app = express();
 const port = 3000;
 
 // Reemplaza 'TU_API_KEY' con la clave que obtuviste en el Paso 1
-const genAI = new GoogleGenerativeAI(' AIzaSyB603VTxXO_gO14j-_DjAjC85E72auX3pk');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Middleware para servir archivos estáticos (HTML, CSS, JS)
 app.use(express.static('public'));
