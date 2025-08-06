@@ -1,0 +1,21 @@
+{
+    "name": "Bot de IA para Hogar",
+    "short_name": "Bot de Hogar",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#007bff",
+    "description": "Tu asistente de IA para resolver problemas del hogar.",
+    "icons": [
+        {
+            "src": "/path/to/tu-icono.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/path/to/tu-icono-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
