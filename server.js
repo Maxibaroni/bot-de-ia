@@ -19,23 +19,14 @@ app.post('/chat', async (req, res) => {
     console.log(`Mensaje del usuario: ${userMessage}`);
 
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        // Añadimos un prompt inicial para darle contexto a la IA
-        const chat = model.startChat({
-            history: [
-                {
-                    role: "user",
-                    parts: "Eres un asistente experto en problemas y reparaciones sencillas del hogar en Argentina. Responde de forma concisa y útil. No te salgas de este tema."
-                },
-                {
-                    role: "model",
-                    parts: "¡Hola! Soy tu asistente de IA para problemas del hogar. ¿En qué puedo ayudarte?"
-                }
-            ]
+        // Usamos systemInstruction para darle un rol a la IA de forma más estable
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            systemInstruction: "Eres un asistente experto en problemas del hogar en Argentina. Responde de forma extremadamente concisa y útil, usando un lenguaje sencillo. Tu objetivo es dar una sola solución clara sin añadir información extra. No te salgas de este tema."
         });
 
-        const result = await chat.sendMessage(userMessage);
+        // La llamada ahora es más simple
+        const result = await model.generateContent(userMessage);
         const botResponse = result.response.text();
 
         // Envía la respuesta del bot de IA al cliente
