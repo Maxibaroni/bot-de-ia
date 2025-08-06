@@ -5,9 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const port = 3000;
 
-// Objeto para almacenar el historial de chat de cada sesión
 const sessions = {};
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.use(express.static('public'));
@@ -36,18 +34,14 @@ app.post('/chat', async (req, res) => {
             systemInstruction: "Eres un asistente experto en problemas del hogar en Argentina. Responde de forma extremadamente concisa y útil, usando un lenguaje sencillo. Tu objetivo es dar una sola solución clara sin añadir información extra. No te salgas de este tema."
         });
 
-        // Corregido: La API espera un array de objetos para 'parts'
         history.push({ role: 'user', parts: [{ text: message }] });
 
         const chat = model.startChat({ history: history });
-        const result = await chat.sendMessageStream(message);
+        
+        // Simplificamos la llamada a la API
+        const result = await chat.sendMessage(message);
+        const botResponse = result.response.text();
 
-        let botResponse = '';
-        for await (const chunk of result.stream) {
-            botResponse += chunk.text;
-        }
-
-        // Corregido: La API espera un array de objetos para 'parts'
         history.push({ role: 'model', parts: [{ text: botResponse }] });
 
         res.json({ response: botResponse });
