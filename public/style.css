@@ -165,7 +165,7 @@ html[data-theme="light"]{
 #user-input{
   border: 0; outline: 0;
   background: var(--surface-2); color: var(--text);
-  padding: 12px 14px; border-radius: 10px; font-size: 15px;
+  padding: 12px 350px; border-radius: 10px; font-size: 15px;
 }
 .send-btn{
   border: 0; outline: 0; cursor: pointer;
