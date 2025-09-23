@@ -125,7 +125,7 @@ async function sendMessage() {
   let imgDataUrl = null;
   if (imageFile) {
     imgDataUrl = await toBase64(imageFile);
-    // compresión opcional (descomenta si querés)
+    // compresión opcional (descomentá si querés)
     imgDataUrl = await compressImage(imgDataUrl, 1024, 0.8);
   }
 
@@ -164,7 +164,6 @@ async function sendMessage() {
 
     if (!res.ok) {
       showError(data?.response || 'Error procesando tu solicitud.');
-      // si el server devolvió sessionId nuevo, guardarlo
       if (data?.sessionId) {
         sessionId = data.sessionId;
         localStorage.setItem('bot-ia:sessionId', sessionId);
@@ -195,12 +194,17 @@ document.getElementById('user-input')?.addEventListener('keydown', (e) => {
   }
 });
 
-document.getElementById('file-upload')?.addEventListener('change', (e) => {
+// Cámara (abre cámara en móviles)
+document.getElementById('file-upload-camera')?.addEventListener('change', (e) => {
   const f = e.target.files?.[0];
   if (f && f.type.startsWith('image/')) setPreview(f);
 });
 
-document.getElementById('clear-image')?.addEventListener('click', () => setPreview(null));
+// Clip (adjuntar desde galería/archivos)
+document.getElementById('file-upload-clip')?.addEventListener('change', (e) => {
+  const f = e.target.files?.[0];
+  if (f && f.type.startsWith('image/')) setPreview(f);
+});
 
 // Drag & Drop
 const dropZone = document.getElementById('drop-zone');

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Asistente Hogar</title>
-  <link rel="stylesheet" href="/style.css?v=8">
+  <link rel="stylesheet" href="/style.css?v=10">
   <link rel="manifest" href="/manifest.json">
 </head>
 <body>
@@ -39,11 +39,14 @@
       <button id="clear-image" class="clear-btn">❌</button>
     </div>
 
-    <!-- Input -->
+    <!-- Composer -->
     <div class="chat-input">
-      <!-- Botón de imagen -->
-      <label for="file-upload" class="icon-btn" title="Subir imagen">📸</label>
-      <input id="file-upload" type="file" accept="image/*" capture="environment" hidden>
+      <!-- Botones de archivo -->
+      <label for="file-upload-camera" class="icon-btn" title="Sacar foto (cámara)">📸</label>
+      <input id="file-upload-camera" type="file" accept="image/*" capture="environment" hidden>
+
+      <label for="file-upload-clip" class="icon-btn" title="Adjuntar desde galería/archivos">📎</label>
+      <input id="file-upload-clip" type="file" accept="image/*" hidden>
 
       <!-- Texto -->
       <input type="text" id="user-input" placeholder="Escribí tu consulta... (Enter para enviar)">
@@ -57,6 +60,6 @@
     Hecho con ❤️ por ByB • Esta app puede demorar unos segundos en despertar en Render.
   </footer>
 
-  <script src="/script.js?v=8" defer></script>
+  <script src="/script.js?v=10" defer></script>
 </body>
 </html>
