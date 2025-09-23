@@ -17,14 +17,12 @@ function showError(msg) {
   if (!errorEl) return;
   errorEl.textContent = msg;
   errorEl.classList.remove('hidden');
-  setTimeout(() => errorEl.classList.add('hidden'), 4000);
+  setTimeout(() => errorEl.classList.add('hidden'), 5000);
 }
-
 function setTyping(on) {
   if (!typingEl) return;
   typingEl.classList.toggle('hidden', !on);
 }
-
 function appendTextMessage(sender, text) {
   const row = document.createElement('div');
   row.className = `msg ${sender}`;
@@ -41,7 +39,6 @@ function appendTextMessage(sender, text) {
   chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
-
 function appendImageMessage(sender, dataUrl) {
   const row = document.createElement('div');
   row.className = `msg ${sender}`;
@@ -62,7 +59,6 @@ function appendImageMessage(sender, dataUrl) {
   chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
-
 function toBase64(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -71,8 +67,7 @@ function toBase64(file) {
     r.readAsDataURL(file);
   });
 }
-
-// compresión opcional para fotos de móvil (reduce ancho y calidad)
+// compresión para fotos móviles (reduce ancho y peso)
 async function compressImage(dataUrl, maxW = 1024, quality = 0.8) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -99,7 +94,6 @@ async function ensureSession() {
   sessionId = data.sessionId;
   localStorage.setItem('bot-ia:sessionId', sessionId);
 }
-
 function setPreview(file) {
   imageFile = file || null;
   if (!previewEl || !previewImg) return;
@@ -116,7 +110,7 @@ function setPreview(file) {
   }
 }
 
-// ====== GEO & PLACES (para búsquedas locales) ======
+// ====== GEO & PLACES ======
 function getUserLocation() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject('Geolocalización no soportada');
@@ -127,7 +121,6 @@ function getUserLocation() {
     );
   });
 }
-
 async function findNearbyPlaces({ q = 'ferreteria', lat, lng }) {
   const url = new URL(`${API_URL}/places`);
   url.searchParams.set('lat', lat);
@@ -140,7 +133,6 @@ async function findNearbyPlaces({ q = 'ferreteria', lat, lng }) {
   if (!r.ok) throw new Error(data?.error || 'Error en /places');
   return data;
 }
-
 function appendPlacesMessage(placesData, queryLabel = 'ferreterías abiertas cerca') {
   const row = document.createElement('div');
   row.className = 'msg bot';
@@ -177,8 +169,7 @@ function appendPlacesMessage(placesData, queryLabel = 'ferreterías abiertas cer
 }
 
 // ====== Envío ======
-let sending = false; // debounce para evitar ráfagas
-
+let sending = false; // debounce
 async function sendMessage() {
   if (sending) return;
   sending = true;
@@ -190,7 +181,7 @@ async function sendMessage() {
   let imgDataUrl = null;
   if (imageFile) {
     imgDataUrl = await toBase64(imageFile);
-    imgDataUrl = await compressImage(imgDataUrl, 1024, 0.8); // compresión opcional
+    imgDataUrl = await compressImage(imgDataUrl, 1024, 0.8);
   }
 
   if (!text && !imgDataUrl) { sending = false; return; }
@@ -206,7 +197,7 @@ async function sendMessage() {
   try {
     await ensureSession();
 
-    // Detectar intención de “ferretería abierta cerca”
+    // Si pide ferretería abierta cerca, usamos ubicación y devolvemos lista
     const textLower = (text || '').toLowerCase();
     const wantsFerreteria =
       /ferreter[ií]a|herrajer[ií]a/.test(textLower) &&
@@ -223,7 +214,7 @@ async function sendMessage() {
         setTyping(false);
         showError('No pude obtener tu ubicación. Activá permisos o probá en Google Maps.');
       }
-      // no retornamos: dejamos que también se envíe a la IA si querés contexto/consejos
+      // seguimos con IA igual (por si quiere consejos extra)
     }
 
     setTyping(true);
@@ -231,7 +222,7 @@ async function sendMessage() {
     const payload = {
       sessionId,
       message: text || '',
-      imageData: imgDataUrl // ya capturada
+      imageData: imgDataUrl
     };
 
     const res = await fetch(`${API_URL}/chat`, {
@@ -247,11 +238,12 @@ async function sendMessage() {
     setTyping(false);
 
     if (!res.ok) {
-      // Manejo 429 con Plan B (límite diario vs momentáneo)
+      // 429 con Plan B (límite diario vs momentáneo)
       if (res.status === 429 && data) {
         const btn = document.getElementById('send-button');
         const origTxt = btn.textContent;
 
+        // Límite diario agotado (free tier)
         if (data.exhausted) {
           showError('Llegaste al límite diario gratuito. Probá mañana o habilitá billing.');
           btn.disabled = true;
@@ -261,6 +253,7 @@ async function sendMessage() {
           return;
         }
 
+        // Límite momentáneo (ráfaga)
         if (data.retryAfter) {
           let left = data.retryAfter;
           btn.disabled = true;
@@ -302,7 +295,6 @@ async function sendMessage() {
 
 // ====== Eventos UI ======
 document.getElementById('send-button')?.addEventListener('click', sendMessage);
-
 document.getElementById('user-input')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -320,6 +312,20 @@ document.getElementById('file-upload-camera')?.addEventListener('change', (e) =>
 document.getElementById('file-upload-clip')?.addEventListener('change', (e) => {
   const f = e.target.files?.[0];
   if (f && f.type.startsWith('image/')) setPreview(f);
+});
+
+// Botón ubicación directa
+document.getElementById('geo-button')?.addEventListener('click', async () => {
+  try {
+    setTyping(true);
+    const geo = await getUserLocation();
+    const data = await findNearbyPlaces({ q: 'ferreteria', lat: geo.lat, lng: geo.lng });
+    setTyping(false);
+    appendPlacesMessage(data, 'ferreterías abiertas cerca');
+  } catch (e) {
+    setTyping(false);
+    showError('No pude obtener tu ubicación. Activá permisos del navegador.');
+  }
 });
 
 // Drag & Drop
@@ -361,5 +367,13 @@ if (toggle) {
   }
 })();
 
+// ====== Service Worker (PWA) ======
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(() => console.log('✅ Service Worker registrado'))
+    .catch(err => console.error('❌ Error registrando SW:', err));
+}
+
 // ====== Boot ======
 ensureSession().catch(() => {});
+document.getElementById('clear-image')?.addEventListener('click', () => setPreview(null));
