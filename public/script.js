@@ -116,8 +116,73 @@ function setPreview(file) {
   }
 }
 
+// ====== GEO & PLACES (para búsquedas locales) ======
+function getUserLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject('Geolocalización no soportada');
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      err => reject(err?.message || 'No se pudo obtener la ubicación'),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+    );
+  });
+}
+
+async function findNearbyPlaces({ q = 'ferreteria', lat, lng }) {
+  const url = new URL(`${API_URL}/places`);
+  url.searchParams.set('lat', lat);
+  url.searchParams.set('lng', lng);
+  url.searchParams.set('q', q);
+  url.searchParams.set('openNow', '1');
+  url.searchParams.set('radius', '2500');
+  const r = await fetch(url.toString());
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error || 'Error en /places');
+  return data;
+}
+
+function appendPlacesMessage(placesData, queryLabel = 'ferreterías abiertas cerca') {
+  const row = document.createElement('div');
+  row.className = 'msg bot';
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar'; avatar.textContent = '🗺️';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  if (!placesData?.results?.length) {
+    bubble.textContent = `No encontré ${queryLabel} en este radio. Probá ampliar el rango o buscar en Google Maps.`;
+  } else {
+    const title = document.createElement('div');
+    title.style.fontWeight = '700';
+    title.style.marginBottom = '6px';
+    title.textContent = `Encontré ${placesData.count} ${queryLabel}:`;
+    bubble.appendChild(title);
+
+    placesData.results.forEach((p, i) => {
+      const item = document.createElement('div');
+      item.style.margin = '6px 0';
+      item.innerHTML = `
+        <div>${i+1}. <strong>${p.name}</strong> ${p.rating ? `⭐ ${p.rating}` : ''} ${p.open_now === true ? '• Abierto' : p.open_now === false ? '• Cerrado' : ''}</div>
+        <div style="color:#a9afc1">${p.address || ''}</div>
+        <div><a href="${p.link}" target="_blank" rel="noopener">Ver en Google Maps</a></div>
+      `;
+      bubble.appendChild(item);
+    });
+  }
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
 // ====== Envío ======
+let sending = false; // debounce para evitar ráfagas
+
 async function sendMessage() {
+  if (sending) return;
+  sending = true;
+
   const input = document.getElementById('user-input');
   const text = input.value.trim();
 
@@ -125,11 +190,10 @@ async function sendMessage() {
   let imgDataUrl = null;
   if (imageFile) {
     imgDataUrl = await toBase64(imageFile);
-    // compresión opcional (descomentá si querés)
-    imgDataUrl = await compressImage(imgDataUrl, 1024, 0.8);
+    imgDataUrl = await compressImage(imgDataUrl, 1024, 0.8); // compresión opcional
   }
 
-  if (!text && !imgDataUrl) return;
+  if (!text && !imgDataUrl) { sending = false; return; }
 
   // pintar mensaje del usuario
   if (text) appendTextMessage('user', text);
@@ -141,6 +205,27 @@ async function sendMessage() {
 
   try {
     await ensureSession();
+
+    // Detectar intención de “ferretería abierta cerca”
+    const textLower = (text || '').toLowerCase();
+    const wantsFerreteria =
+      /ferreter[ií]a|herrajer[ií]a/.test(textLower) &&
+      /abiert(a|o)|ahora|cerca/.test(textLower);
+
+    if (wantsFerreteria) {
+      try {
+        setTyping(true);
+        const geo = await getUserLocation();
+        const data = await findNearbyPlaces({ q: 'ferreteria', lat: geo.lat, lng: geo.lng });
+        setTyping(false);
+        appendPlacesMessage(data, 'ferreterías abiertas cerca');
+      } catch (e) {
+        setTyping(false);
+        showError('No pude obtener tu ubicación. Activá permisos o probá en Google Maps.');
+      }
+      // no retornamos: dejamos que también se envíe a la IA si querés contexto/consejos
+    }
+
     setTyping(true);
 
     const payload = {
@@ -155,7 +240,6 @@ async function sendMessage() {
       body: JSON.stringify(payload)
     });
 
-    // leer como texto por si backend manda error plano
     const raw = await res.text();
     let data = {};
     try { data = JSON.parse(raw); } catch { data = { response: raw }; }
@@ -163,11 +247,41 @@ async function sendMessage() {
     setTyping(false);
 
     if (!res.ok) {
+      // Manejo 429 con Plan B (límite diario vs momentáneo)
+      if (res.status === 429 && data) {
+        const btn = document.getElementById('send-button');
+        const origTxt = btn.textContent;
+
+        if (data.exhausted) {
+          showError('Llegaste al límite diario gratuito. Probá mañana o habilitá billing.');
+          btn.disabled = true;
+          btn.textContent = 'Límite diario alcanzado';
+          localStorage.setItem('bot-ia:daily-exhausted', '1');
+          sending = false;
+          return;
+        }
+
+        if (data.retryAfter) {
+          let left = data.retryAfter;
+          btn.disabled = true;
+          const id = setInterval(() => {
+            btn.textContent = `Esperá ${left}s`;
+            left--;
+            if (left <= 0) {
+              clearInterval(id);
+              btn.disabled = false;
+              btn.textContent = origTxt;
+            }
+          }, 1000);
+        }
+      }
+
       showError(data?.response || 'Error procesando tu solicitud.');
       if (data?.sessionId) {
         sessionId = data.sessionId;
         localStorage.setItem('bot-ia:sessionId', sessionId);
       }
+      sending = false;
       return;
     }
 
@@ -181,6 +295,8 @@ async function sendMessage() {
     setTyping(false);
     console.error(err);
     showError('No se pudo contactar al servidor. Verificá que esté encendido.');
+  } finally {
+    sending = false;
   }
 }
 
@@ -194,13 +310,13 @@ document.getElementById('user-input')?.addEventListener('keydown', (e) => {
   }
 });
 
-// Cámara (abre cámara en móviles)
+// Cámara (móvil)
 document.getElementById('file-upload-camera')?.addEventListener('change', (e) => {
   const f = e.target.files?.[0];
   if (f && f.type.startsWith('image/')) setPreview(f);
 });
 
-// Clip (adjuntar desde galería/archivos)
+// Clip (galería/archivos)
 document.getElementById('file-upload-clip')?.addEventListener('change', (e) => {
   const f = e.target.files?.[0];
   if (f && f.type.startsWith('image/')) setPreview(f);
@@ -233,6 +349,17 @@ if (toggle) {
   const storedTheme = localStorage.getItem('bot-ia:theme');
   if (storedTheme) document.documentElement.setAttribute('data-theme', storedTheme);
 }
+
+// Deshabilitar “Enviar” si marcamos límite diario en esta sesión
+(function lockIfDailyExhausted(){
+  const exhausted = localStorage.getItem('bot-ia:daily-exhausted') === '1';
+  if (!exhausted) return;
+  const btn = document.getElementById('send-button');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Límite diario alcanzado';
+  }
+})();
 
 // ====== Boot ======
 ensureSession().catch(() => {});

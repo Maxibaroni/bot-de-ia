@@ -19,12 +19,12 @@ if (!process.env.GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /* -------------------- Estado en memoria -------------------- */
-const sessions = {};             // historial por sessionId
-const rate = new Map();          // rate-limit por sessionId
+const sessions = {};   // historial por sessionId
+const rate = new Map(); // rate-limit por sessionId
 
 /* -------------------- Middlewares -------------------- */
-app.use(express.json({ limit: '75mb' }));                          // imágenes grandes desde móvil
-app.use(express.static(path.join(__dirname, 'public')));           // servir frontend
+app.use(express.json({ limit: '75mb' }));                 // imágenes grandes desde móvil
+app.use(express.static(path.join(__dirname, 'public')));  // servir frontend
 
 /* -------------------- Utils -------------------- */
 function fileToGenerativePart(base64Data) {
@@ -34,7 +34,7 @@ function fileToGenerativePart(base64Data) {
   return { inlineData: { data, mimeType } };
 }
 
-// token bucket simple: 5 req / ~30s por sesión (1 token cada 6s)
+// Token bucket simple: 5 req / ~30s por sesión (1 token cada 6s)
 function checkSessionRate(sessionId) {
   const now = Date.now();
   const bucket = rate.get(sessionId) || { tokens: 5, ts: now };
@@ -71,7 +71,7 @@ function buildNearbyUrl({ lat, lng, keyword = 'ferretería', radius = 2500, open
     location: `${lat},${lng}`,
     radius: String(radius),
     keyword,
-    key: process.env.MAPS_API_KEY
+    key: process.env.MAPS_API_KEY || ''
   });
   if (openNow) params.set('opennow', 'true');
   return `${base}?${params.toString()}`;
@@ -115,7 +115,7 @@ app.get('/places', async (req, res) => {
   }
 });
 
-/* -------------------- Chat principal (con sesión a prueba de balas + 429) -------------------- */
+/* -------------------- Chat principal (con sesión + rate limit + manejo 429) -------------------- */
 app.post('/chat', async (req, res) => {
   let { sessionId, message, imageData } = req.body || {};
   console.log(`📩 Mensaje recibido (sesión ${sessionId || 'n/a'}):`, message);
@@ -174,21 +174,32 @@ app.post('/chat', async (req, res) => {
     // 7) Responder (incluye sessionId)
     res.json({ response: botResponse, sessionId });
   } catch (err) {
-    // Manejo específico de 429 (cuota/ráfagas de la API)
+    // Manejo específico de 429 (cuota/ráfagas de la API) + “Plan B” (límite diario)
     const msg = String(err?.message || '');
+
     let retryAfter = 0;
     const m1 = msg.match(/"retryDelay":"(\d+)s"/);
     const m2 = msg.match(/Please retry in (\d+(\.\d+)?)s/);
     if (m1) retryAfter = parseInt(m1[1], 10);
     else if (m2) retryAfter = Math.ceil(parseFloat(m2[1]));
+
+    // Heurística para detectar límite diario del free tier
+    const exhaustedDaily =
+      msg.includes('GenerateRequestsPerDayPerProjectPerModel-FreeTier') ||
+      /per\s*day/i.test(msg);
+
     const is429 = msg.includes('[429') || retryAfter > 0;
 
     console.error('❌ Error con Gemini:', msg);
 
     if (is429) {
       return res.status(429).json({
-        response: `Se alcanzó el límite de la API. Probá de nuevo en ${retryAfter || 60} segundos.`,
+        response: exhaustedDaily
+          ? 'Se alcanzó el límite diario gratuito de la API.'
+          : `Se alcanzó el límite momentáneo. Probá de nuevo en ${retryAfter || 60} segundos.`,
         retryAfter: retryAfter || 60,
+        exhausted: exhaustedDaily,                     // flag para el front
+        resetHintUtc: new Date(Date.now() + (retryAfter || 60) * 1000).toISOString(),
         sessionId
       });
     }
