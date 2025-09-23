@@ -1,67 +1,62 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bot de IA para el Hogar</title>
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistente Hogar</title>
+  <link rel="stylesheet" href="/style.css?v=8">
+  <link rel="manifest" href="/manifest.json">
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <div class="logo">🏠</div>
-      <div>
-        <h1>Asistente Hogar</h1>
-        <p class="subtitle">Soluciones simples para tu casa (AR)</p>
-      </div>
-    </div>
+  <div class="chat-container">
 
-    <div class="header-actions">
-      <button id="theme-toggle" title="Cambiar tema">🌓</button>
-      <a class="pill" href="/health" target="_blank" rel="noopener">Health</a>
-    </div>
-  </header>
+    <!-- Header -->
+    <header class="chat-header">
+      <h1>Asistente Hogar</h1>
+      <p>Soluciones simples para tu casa (AR)</p>
+      <button id="theme-toggle" class="theme-btn">🌓</button>
+      <a href="/health" target="_blank" id="health-check">Health</a>
+    </header>
 
-  <main class="chat-wrapper">
-    <div id="error-banner" class="error-banner hidden"></div>
-
-    <div id="chat-messages" class="chat-messages">
+    <!-- Mensajes -->
+    <main id="chat-messages" class="chat-messages">
       <div class="msg bot">
         <div class="avatar">🤖</div>
-        <div class="bubble">
-          ¡Hola! Soy tu asistente de IA para problemas del hogar. ¿En qué puedo ayudarte?
-        </div>
+        <div class="bubble">¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte con tu hogar?</div>
       </div>
+    </main>
+
+    <!-- Estado -->
+    <div id="typing" class="typing hidden">🤖 escribiendo...</div>
+    <div id="error-banner" class="error-banner hidden"></div>
+
+    <!-- Zona de drop -->
+    <div id="drop-zone" class="drop-zone">Arrastrá una imagen aquí</div>
+
+    <!-- Preview imagen -->
+    <div id="image-preview" class="hidden preview">
+      <img src="" alt="preview">
+      <button id="clear-image" class="clear-btn">❌</button>
     </div>
 
-    <div id="typing" class="typing hidden">
-      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-    </div>
-
-    <div class="composer" id="drop-zone">
+    <!-- Input -->
+    <div class="chat-input">
+      <!-- Botón de imagen -->
       <label for="file-upload" class="icon-btn" title="Subir imagen">📸</label>
-      <input type="file" id="file-upload" accept="image/*" hidden />
+      <input id="file-upload" type="file" accept="image/*" capture="environment" hidden>
 
-      <input type="text" id="user-input" placeholder="Escribí tu consulta... (Enter para enviar)" autocomplete="off" />
+      <!-- Texto -->
+      <input type="text" id="user-input" placeholder="Escribí tu consulta... (Enter para enviar)">
 
-      <button id="send-button" class="send">Enviar ➤</button>
+      <!-- Enviar -->
+      <button id="send-button" class="send-btn">Enviar ➤</button>
     </div>
+  </div>
 
-    <div id="image-preview" class="image-preview hidden">
-      <img alt="vista previa" />
-      <button id="clear-image" class="mini-btn">✕</button>
-    </div>
-  </main>
-
-  <footer class="app-footer">
-    <small>
-      Hecho con ❤️ por ByB • Esta app puede demorar unos segundos en despertar en Render.
-    </small>
+  <footer class="footer">
+    Hecho con ❤️ por ByB • Esta app puede demorar unos segundos en despertar en Render.
   </footer>
 
-  <script src="/script.js" defer></script>
+  <script src="/script.js?v=8" defer></script>
 </body>
 </html>

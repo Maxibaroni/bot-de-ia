@@ -9,38 +9,33 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Validaciones iniciales ---
+// --- Validación API Key ---
 if (!process.env.GEMINI_API_KEY) {
-  console.error('❌ Falta GEMINI_API_KEY en el .env o en las variables de entorno del servidor.');
+  console.error('❌ Falta GEMINI_API_KEY en .env o en las variables de entorno de Render.');
   process.exit(1);
 }
 
-// --- IA (Gemini) ---
+// --- Inicialización Gemini ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// --- Estado en memoria de sesiones ---
-const sessions = {}; // { sessionId: [{role:'user'|'model', parts:[...]}] }
+// --- Sesiones en memoria ---
+const sessions = {};
 
 // --- Middlewares ---
-app.use(express.json({ limit: '50mb' })); // para imágenes base64
-app.use(express.static(path.join(__dirname, 'public'))); // servir frontend
+app.use(express.json({ limit: '50mb' })); // Permite imágenes base64 pesadas
+app.use(express.static(path.join(__dirname, 'public'))); // Sirve el frontend
 
-// (Opcional) CORS si algún día servís el front desde otro dominio
-// const cors = require('cors');
-// app.use(cors({ origin: true, credentials: true }));
-
-// --- Utilidades ---
+// --- Utilidad para imágenes ---
 function fileToGenerativePart(base64Data) {
-  // Espera "data:<mime>;base64,<data>"
   if (!base64Data || !base64Data.includes(',')) return null;
   const [meta, data] = base64Data.split(',');
   const mimeType = meta.split(':')[1]?.split(';')[0] || 'image/png';
   return { inlineData: { data, mimeType } };
 }
 
-// --- Rutas ---
+// --- Rutas utilitarias ---
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, ts: Date.now(), envPort: process.env.PORT || null });
+  res.json({ ok: true, port: PORT, ts: Date.now() });
 });
 
 app.get('/start-session', (_req, res) => {
@@ -50,12 +45,23 @@ app.get('/start-session', (_req, res) => {
   res.json({ sessionId });
 });
 
+// --- Chat principal (con auto-creación de sesión) ---
 app.post('/chat', async (req, res) => {
-  const { sessionId, message, imageData } = req.body || {};
-  console.log(`📩 Mensaje (sesión ${sessionId || 'sin-id'}):`, message);
+  let { sessionId, message, imageData } = req.body || {};
+  console.log(`📩 Mensaje recibido (sesión ${sessionId || 'n/a'}):`, message);
 
+  // 1) Si falta o es inválida, crear una nueva y usarla
   if (!sessionId || !sessions[sessionId]) {
-    return res.status(400).json({ response: 'ID de sesión inválido o no encontrado.' });
+    sessionId = uuidv4();
+    sessions[sessionId] = [];
+    console.log(`⚠️ Sesión ausente/ inválida → creada: ${sessionId}`);
+  }
+
+  // 2) Evitar requests vacíos
+  const hasText = !!(message && String(message).trim());
+  const hasImage = !!imageData;
+  if (!hasText && !hasImage) {
+    return res.status(400).json({ response: 'Enviá un mensaje o una imagen.', sessionId });
   }
 
   const history = sessions[sessionId];
@@ -69,37 +75,31 @@ app.post('/chat', async (req, res) => {
 
     const chat = model.startChat({ history });
 
+    // Armar partes para Gemini
     const parts = [];
-    if (message && message.trim()) parts.push({ text: message.trim() });
-    if (imageData) {
+    if (hasText) parts.push({ text: String(message).trim() });
+    if (hasImage) {
       const img = fileToGenerativePart(imageData);
       if (img) parts.push(img);
     }
 
-    if (parts.length === 0) {
-      return res.status(400).json({ response: 'Enviá un mensaje o una imagen para empezar.' });
-    }
-
+    // Llamar a Gemini
     const result = await chat.sendMessage(parts);
     const botResponse = result.response.text();
 
-    // Persistimos historial compatible con la SDK
+    // Guardar historial (formato compatible con la SDK)
     history.push({ role: 'user', parts });
     history.push({ role: 'model', parts: [{ text: botResponse }] });
 
-    res.json({ response: botResponse });
+    // 3) Devolver también sessionId (para que el front lo guarde)
+    res.json({ response: botResponse, sessionId });
   } catch (err) {
     console.error('❌ Error con Gemini:', err?.message || err);
-    res.status(500).json({ response: 'Hubo un problema al procesar tu solicitud.' });
+    res.status(500).json({ response: 'Hubo un problema al procesar tu solicitud.', sessionId });
   }
 });
 
-// (Opcional) Fallback para single-page apps si alguna vez lo necesitás
-// app.get('*', (_req, res) => {
-//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
-// });
-
-// --- Start ---
+// --- Inicio ---
 app.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
 });
