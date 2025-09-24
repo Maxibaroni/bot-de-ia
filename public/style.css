@@ -50,7 +50,7 @@ body{
 /* ---------- Header ---------- */
 .chat-header{
   position:sticky;top:10px;z-index:10;
-  display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;
+  display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;
   padding:14px 16px;border-radius:20px;
   background:linear-gradient(180deg,var(--glass-1),var(--glass-2));
   border:1px solid rgba(255,255,255,.12);
@@ -85,7 +85,8 @@ body{
   max-width:78%;padding:12px 14px;border-radius:16px;line-height:1.45;
   border:1px solid rgba(255,255,255,.12);
   background:rgba(255,255,255,.08);backdrop-filter:blur(8px);
-  word-wrap:break-word;white-space:pre-wrap
+  word-wrap:break-word;white-space:pre-wrap;
+  direction:ltr;unicode-bidi:plaintext;text-align:left; /* anti espejo */
 }
 .msg.user{justify-content:flex-end}
 .msg.user .bubble{
@@ -123,18 +124,19 @@ body{
 .composer{
   position:fixed;left:0;right:0;bottom:70px; /* aire respecto del disclaimer */
   margin:0 auto;max-width:980px;z-index:60;
-  display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  display:grid;grid-template-columns:auto 1fr auto; /* cámara | input | enviar */
+  gap:12px;align-items:center;
   padding:10px;background:rgba(255,255,255,.92);color:#0b1220;border-radius:16px;
   border:1px solid rgba(0,0,0,.06);backdrop-filter:blur(12px);box-shadow:0 10px 28px rgba(0,0,0,.35)
 }
-.icons{display:flex;gap:8px}
 .icon{
   width:44px;height:44px;display:grid;place-items:center;border-radius:12px;
   background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.08);cursor:pointer
 }
 .pill{
   height:44px;padding:0 14px;border-radius:22px;width:100%;
-  border:1px solid rgba(0,0,0,.12);background:#fff;color:#0b1220;font-size:15px;outline:none
+  border:1px solid rgba(0,0,0,.12);background:#fff;color:#0b1220;font-size:15px;outline:none;
+  direction:ltr;unicode-bidi:plaintext;text-align:left; /* anti espejo */
 }
 .btn-primary{
   height:44px;padding:0 16px;border:0;border-radius:12px;cursor:pointer;color:#0b1220;font-weight:700;

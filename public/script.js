@@ -197,7 +197,7 @@ async function sendMessage() {
   try {
     await ensureSession();
 
-    // Si pide ferretería abierta cerca, usamos ubicación y devolvemos lista
+    // Heurística: si pide ferretería abierta cerca, respondemos con listado
     const textLower = (text || '').toLowerCase();
     const wantsFerreteria =
       /ferreter[ií]a|herrajer[ií]a/.test(textLower) &&
@@ -214,7 +214,7 @@ async function sendMessage() {
         setTyping(false);
         showError('No pude obtener tu ubicación. Activá permisos o probá en Google Maps.');
       }
-      // seguimos con IA igual (por si quiere consejos extra)
+      // seguimos con IA igualmente
     }
 
     setTyping(true);
@@ -308,24 +308,8 @@ document.getElementById('file-upload-camera')?.addEventListener('change', (e) =>
   if (f && f.type.startsWith('image/')) setPreview(f);
 });
 
-// Clip (galería/archivos)
-document.getElementById('file-upload-clip')?.addEventListener('change', (e) => {
-  const f = e.target.files?.[0];
-  if (f && f.type.startsWith('image/')) setPreview(f);
-});
-
-// Fallback para iOS/Android donde el <label> no dispara el input
-document.querySelector('label[for="file-upload-camera"]')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('file-upload-camera')?.click();
-});
-document.querySelector('label[for="file-upload-clip"]')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  document.getElementById('file-upload-clip')?.click();
-});
-
-// Botón ubicación directa
-document.getElementById('geo-button')?.addEventListener('click', async () => {
+// Botón ubicación en header
+document.getElementById('nearby-button')?.addEventListener('click', async () => {
   try {
     setTyping(true);
     const geo = await getUserLocation();
@@ -379,7 +363,7 @@ if ('serviceWorker' in navigator) {
 (function mobileKeyboardFix() {
   const html = document.documentElement;
   const messages = document.getElementById('chat-messages');
-  const composer = document.querySelector('.chat-input');
+  const composer = document.querySelector('.composer');
   const input = document.getElementById('user-input');
 
   function applyVH() {

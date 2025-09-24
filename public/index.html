@@ -16,7 +16,11 @@
         <h1>Asistente Hogar</h1>
         <p>Soluciones simples para tu casa (AR)</p>
       </div>
-      <button id="theme-toggle" class="chip">🌓</button>
+
+      <!-- NUEVO: lugares cerca -->
+      <button id="nearby-button" class="chip" title="Ferreterías abiertas cerca">📍 Cerca</button>
+
+      <button id="theme-toggle" class="chip" title="Cambiar tema">🌓</button>
       <a id="health-check" class="chip" href="#" onclick="return false;">Health</a>
     </header>
 
@@ -43,17 +47,12 @@
     <div class="composer">
       <!-- inputs reales ocultos -->
       <input id="file-upload-camera" type="file" accept="image/*" capture="environment" hidden />
-      <input id="file-upload-clip"   type="file" accept="image/*" hidden />
+      <!-- 1 icono: cámara -->
+      <label for="file-upload-camera" class="icon" title="Usar cámara">📷</label>
 
-      <!-- grupo de iconos -->
-      <div class="icons">
-        <label for="file-upload-camera" class="icon" title="Usar cámara">📷</label>
-        <label for="file-upload-clip"   class="icon" title="Adjuntar foto">📎</label>
-        <button id="geo-button" class="icon" title="Ferreterías abiertas cerca">📍</button>
-      </div>
-
-      <!-- input pill -->
-      <input id="user-input" class="pill" type="text" placeholder="Escribí tu consulta..." autocomplete="off" />
+      <!-- input “pill” con LTR para evitar espejo -->
+      <input id="user-input" class="pill" type="text" dir="ltr"
+             placeholder="Escribí tu consulta..." autocomplete="off" />
 
       <!-- enviar -->
       <button id="send-button" class="btn-primary">Enviar ➤</button>
