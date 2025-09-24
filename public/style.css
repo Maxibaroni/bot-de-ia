@@ -1,6 +1,7 @@
-/* ====== Base & Variables ====== */
+/* ========== Variables & Base ========== */
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
+
 :root{
   --bg: #0c0f14;
   --bg-accent: radial-gradient(1200px 800px at 10% -10%, #1a3b7a30, transparent 60%),
@@ -9,10 +10,9 @@ html, body { height: 100%; margin: 0; }
   --surface: rgba(255,255,255,.06);
   --surface-2: rgba(255,255,255,.08);
   --text: #eef2ff;
-  --muted: #aab2c5;
+  --muted: #aab2c1;
   --primary: #5aa2ff;
   --primary-2: #8ec5ff;
-  --success: #2ecc71;
   --danger: #ff5c5c;
   --bubble-user: linear-gradient(135deg, #4e8fff, #2d7cff);
   --bubble-bot: rgba(255,255,255,.08);
@@ -25,7 +25,7 @@ html[data-theme="light"]{
   --bg-accent: radial-gradient(1200px 800px at 10% -10%, #d6e7ff80, transparent 60%),
                radial-gradient(1200px 800px at 110% 10%, #ffd6f580, transparent 60%),
                linear-gradient(180deg, #f6f7fb, #eff2f9);
-  --surface: rgba(255,255,255,.65);
+  --surface: rgba(0,0,0,.04);
   --surface-2: rgba(255,255,255,.85);
   --text: #12131a;
   --muted: #6b7280;
@@ -38,26 +38,32 @@ html[data-theme="light"]{
 body{
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
-  min-height: 100%;
   background: var(--bg);
   background-image: var(--bg-accent);
   background-attachment: fixed;
-  display: grid;
-  grid-template-rows: 1fr auto;
+  /* ✅ Evita doble scroll y cortes en mobile */
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ====== Shell ====== */
+/* ========== Layout ========== */
 .chat-container{
   width: min(980px, 100%);
-  margin: 18px auto;
+  margin: 12px auto;
   padding: 0 14px;
-  display: grid;
-  grid-template-rows: auto 1fr auto auto auto;
-  gap: 14px;
+  /* ✅ Flex vertical para que .chat-messages crezca sin corte */
+  display: flex;
+  flex-direction: column;
+  /* toma toda la altura visible dinámica del dispositivo */
+  height: 100dvh;
+  gap: 12px;
 }
 
+/* Header “glass” */
 .chat-header{
-  position: sticky; top: 12px; z-index: 20;
+  position: sticky; top: 10px; z-index: 20;
   display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;
   padding: 14px 16px;
   border-radius: calc(var(--radius) + 4px);
@@ -77,7 +83,8 @@ body{
 }
 .theme-btn:hover, #health-check:hover{ transform: translateY(-1px); }
 
-/* ====== Mensajes ====== */
+/* ========== Mensajes ========== */
+/* ✅ Sin altura fija: crece con el espacio disponible */
 .chat-messages{
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,.10);
@@ -85,8 +92,12 @@ body{
   backdrop-filter: blur(var(--blur));
   box-shadow: var(--shadow);
   padding: 16px 14px;
-  height: clamp(440px, 64vh, 72vh);
-  overflow: auto;
+
+  /* clave para que no se corte con teclado en móviles */
+  flex: 1 1 auto;           /* crece para ocupar el espacio libre */
+  min-height: 0;            /* permite que el contenedor colapse y haga scroll interno */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
 
@@ -124,7 +135,7 @@ body{
 }
 .msg.user .avatar{ order: 2; background: linear-gradient(135deg, #2d7cff, #6aa6ff); color: #fff; }
 
-/* “Colitas” suaves de burbuja */
+/* colitas */
 .msg.bot .bubble::after,
 .msg.user .bubble::after{
   content: ""; position: absolute; bottom: 0; width: 10px; height: 10px;
@@ -133,10 +144,7 @@ body{
 .msg.bot .bubble::after { left: -6px; background: var(--bubble-bot); filter: blur(.2px); }
 .msg.user .bubble::after{ right: -6px; background: #2d7cff; filter: blur(.2px); }
 
-/* Timestamps (si los agregás luego) */
-.timestamp{ display:block; font-size: 11px; color: var(--muted); margin-top: 4px; }
-
-/* Typing con puntitos */
+/* typing */
 .typing{
   color: var(--muted); font-size: 13px; padding: 0 6px;
 }
@@ -152,14 +160,14 @@ body{
   100% { content: " "; }
 }
 
-/* Error */
+/* error banner */
 .error-banner{
   background: #3b1f1f; color: #ffd6d6;
   border: 1px solid #5b2a2a; padding: 10px 12px;
   border-radius: 12px; box-shadow: var(--shadow);
 }
 
-/* Dropzone & Preview */
+/* ========== Dropzone & Preview ========== */
 .drop-zone{
   border: 2px dashed rgba(255,255,255,.14);
   background: var(--surface);
@@ -180,7 +188,7 @@ body{
   border-radius: 10px; padding: 6px 9px; cursor: pointer;
 }
 
-/* Composer */
+/* ========== Composer ========== */
 .chat-input{
   display: grid; grid-template-columns: auto auto 1fr auto;
   align-items: center; gap: 10px;
@@ -188,6 +196,8 @@ body{
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 16px; padding: 10px; box-shadow: var(--shadow);
   backdrop-filter: blur(var(--blur));
+  /* ✅ que no se achique cuando sube el teclado */
+  flex-shrink: 0;
 }
 .icon-btn{
   width: 44px; height: 44px; display: grid; place-items: center;
@@ -213,20 +223,40 @@ body{
 .send-btn:hover{ transform: translateY(-1px); filter: brightness(1.03); }
 .send-btn:disabled{ opacity: .6; cursor: not-allowed; }
 
-/* Footer */
+/* ========== Footer & Disclaimer ========== */
 .footer{
   text-align: center; color: var(--muted); font-size: 12px;
   padding: 14px 10px;
 }
+.disclaimer {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+html[data-theme="light"] .disclaimer {
+  background: rgba(0,0,0,.05);
+  border: 1px solid rgba(0,0,0,.1);
+  color: #555;
+}
 
-/* Helpers */
+/* ========== Helpers ========== */
 .hidden{ display: none !important; }
 
-/* ====== MOBILE UX BOOST ====== */
+/* ========== Mobile UX & Safe Areas ========== */
 :root { --tap: 48px; --gap: 10px; }
-@supports (height: 100dvh) { body { min-height: 100dvh; } }
 @supports (padding: max(0px)) {
-  .chat-container { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .chat-container { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+}
+@supports (height: 100dvh) {
+  .chat-container { height: 100dvh; }
 }
 
 @media (max-width: 720px){
@@ -234,11 +264,6 @@ body{
   .chat-header{ grid-template-columns: 1fr auto; padding: 12px; border-radius: 14px; }
   .chat-header h1{ font-size: 18px; }
   .chat-header p{ font-size: 12px; }
-  .chat-messages{
-    min-height: 52vh;
-    max-height: calc(100dvh - 260px);
-    padding: 12px 10px;
-  }
   .msg .bubble{ max-width: 90%; font-size: 15px; line-height: 1.45; }
   .drop-zone{ font-size: 12px; padding: 8px; }
   .preview img{ max-height: 60px; max-width: 120px; }

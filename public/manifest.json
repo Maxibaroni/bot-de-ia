@@ -1,21 +1,27 @@
 {
-    "name": "Bot de IA para Hogar",
-    "short_name": "Bot de Hogar",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#007bff",
-    "description": "Tu asistente de IA para resolver problemas del hogar.",
-    "icons": [
-        {
-            "src": "/path/to/tu-icono.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "/path/to/tu-icono-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "Asistente Hogar",
+  "short_name": "HogarIA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0f14",
+  "theme_color": "#5aa2ff",
+  "description": "Tu asistente de IA para resolver problemas en el hogar",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
