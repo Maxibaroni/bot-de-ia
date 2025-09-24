@@ -68,7 +68,7 @@ function toBase64(file) {
   });
 }
 // compresión para fotos móviles (reduce ancho y peso)
-async function compressImage(dataUrl, maxW = 1024, quality = 0.8) {
+async function compressImage(dataUrl, maxW = 1280, quality = 0.7) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -177,11 +177,11 @@ async function sendMessage() {
   const input = document.getElementById('user-input');
   const text = input.value.trim();
 
-  // 1) Capturar dataURL de la imagen ANTES de limpiar
+  // Capturar dataURL de la imagen ANTES de limpiar
   let imgDataUrl = null;
   if (imageFile) {
     imgDataUrl = await toBase64(imageFile);
-    imgDataUrl = await compressImage(imgDataUrl, 1024, 0.8);
+    imgDataUrl = await compressImage(imgDataUrl, 1280, 0.7);
   }
 
   if (!text && !imgDataUrl) { sending = false; return; }
@@ -190,7 +190,7 @@ async function sendMessage() {
   if (text) appendTextMessage('user', text);
   if (imgDataUrl) appendImageMessage('user', imgDataUrl);
 
-  // 2) limpiar UI
+  // limpiar UI
   input.value = '';
   setPreview(null);
 
@@ -238,12 +238,12 @@ async function sendMessage() {
     setTyping(false);
 
     if (!res.ok) {
-      // 429 con Plan B (límite diario vs momentáneo)
+      // 429 con plan B (ráfaga vs límite diario)
       if (res.status === 429 && data) {
         const btn = document.getElementById('send-button');
         const origTxt = btn.textContent;
 
-        // Límite diario agotado (free tier)
+        // Límite diario agotado
         if (data.exhausted) {
           showError('Llegaste al límite diario gratuito. Probá mañana o habilitá billing.');
           btn.disabled = true;
@@ -314,6 +314,16 @@ document.getElementById('file-upload-clip')?.addEventListener('change', (e) => {
   if (f && f.type.startsWith('image/')) setPreview(f);
 });
 
+// Fallback para iOS/Android donde el <label> no dispara el input
+document.querySelector('label[for="file-upload-camera"]')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('file-upload-camera')?.click();
+});
+document.querySelector('label[for="file-upload-clip"]')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('file-upload-clip')?.click();
+});
+
 // Botón ubicación directa
 document.getElementById('geo-button')?.addEventListener('click', async () => {
   try {
@@ -328,33 +338,24 @@ document.getElementById('geo-button')?.addEventListener('click', async () => {
   }
 });
 
-// Drag & Drop
-const dropZone = document.getElementById('drop-zone');
-if (dropZone) {
-  ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, (e) => {
-    e.preventDefault(); e.stopPropagation(); dropZone.classList.add('dragover');
-  }));
-  ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, (e) => {
-    e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('dragover');
-  }));
-  dropZone.addEventListener('drop', (e) => {
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) setPreview(file);
-  });
-}
-
-// Tema claro/oscuro
-const toggle = document.getElementById('theme-toggle');
-if (toggle) {
-  toggle.addEventListener('click', () => {
-    const html = document.documentElement;
-    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('bot-ia:theme', next);
-  });
+// Tema claro/oscuro (persistente)
+(function themeBoot(){
   const storedTheme = localStorage.getItem('bot-ia:theme');
-  if (storedTheme) document.documentElement.setAttribute('data-theme', storedTheme);
-}
+  if (storedTheme) {
+    document.documentElement.setAttribute('data-theme', storedTheme);
+  } else {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const t = prefersDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('bot-ia:theme', t);
+  }
+})();
+document.getElementById('theme-toggle')?.addEventListener('click', () => {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('bot-ia:theme', next);
+});
 
 // Deshabilitar “Enviar” si marcamos límite diario en esta sesión
 (function lockIfDailyExhausted(){
@@ -373,6 +374,33 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('✅ Service Worker registrado'))
     .catch(err => console.error('❌ Error registrando SW:', err));
 }
+
+// ====== Fix teclado móvil (Android/iOS): visualViewport + --vh ======
+(function mobileKeyboardFix() {
+  const html = document.documentElement;
+  const messages = document.getElementById('chat-messages');
+  const composer = document.querySelector('.chat-input');
+  const input = document.getElementById('user-input');
+
+  function applyVH() {
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    html.style.setProperty('--vh', `${vh}px`);
+  }
+  applyVH();
+
+  window.visualViewport?.addEventListener('resize', applyVH);
+  window.addEventListener('orientationchange', () => setTimeout(applyVH, 150));
+
+  // asegurar que el composer quede visible al abrir teclado
+  ['focus', 'click'].forEach(ev => {
+    input?.addEventListener(ev, () => {
+      setTimeout(() => {
+        composer?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+        messages?.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
+      }, 50);
+    });
+  });
+})();
 
 // ====== Boot ======
 ensureSession().catch(() => {});

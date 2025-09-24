@@ -19,6 +19,8 @@ html, body { height: 100%; margin: 0; }
   --shadow: 0 20px 50px rgba(0,0,0,.45);
   --radius: 16px;
   --blur: 18px;
+  /* Altura dinámica para móviles (se setea desde JS con visualViewport) */
+  --vh: 100vh;
 }
 html[data-theme="light"]{
   --bg: #f6f7fb;
@@ -44,8 +46,8 @@ body{
 
   /* ✅ Evita doble scroll y cortes en móviles */
   height: 100%;
-  min-height: 100vh;   /* fallback para navegadores viejos */
-  min-height: 100dvh;  /* altura dinámica (teclado/notch) */
+  min-height: 100vh;   /* fallback */
+  min-height: 100dvh;  /* dinámico, pero algunos Android lo calculan mal */
   overflow: hidden;
 
   display: flex;
@@ -58,10 +60,14 @@ body{
   margin: 12px auto;
   padding: 0 14px;
 
-  /* ✅ Flex vertical para que .chat-messages crezca sin corte */
+  /* ✅ layout flexible */
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+
+  /* Altura basada en --vh (visualViewport), más robusto en Android/Xiaomi */
+  height: var(--vh);
+  min-height: 0;
+
   gap: 12px;
 }
 
@@ -88,7 +94,6 @@ body{
 .theme-btn:hover, #health-check:hover{ transform: translateY(-1px); }
 
 /* ========== Mensajes ========== */
-/* ✅ Sin altura fija: crece con el espacio disponible */
 .chat-messages{
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,.10);
@@ -98,8 +103,8 @@ body{
   padding: 16px 14px;
 
   /* clave para que no se corte con teclado en móviles */
-  flex: 1 1 auto;   /* ocupa el espacio libre */
-  min-height: 0;    /* permite scroll interno correcto */
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
@@ -202,7 +207,7 @@ body{
   backdrop-filter: blur(var(--blur));
   flex-shrink: 0;
 
-  /* ✅ Sticky global para que no se recorte con teclado (Android/iOS) */
+  /* Sticky por defecto */
   position: sticky;
   bottom: 0;
   background-clip: padding-box;
@@ -263,22 +268,33 @@ html[data-theme="light"] .disclaimer {
 @supports (padding: max(0px)) {
   .chat-container { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
 }
-@supports (height: 100dvh) {
-  .chat-container { height: 100dvh; }
-}
 
+/* Fallbacks y mejoras para móviles */
 @media (max-width: 720px){
+  body { background-attachment: scroll; } /* evita glitches de fondo */
   .chat-container{ width: 100%; margin: 0 auto; padding: 10px; gap: var(--gap); }
+
   .chat-header{ grid-template-columns: 1fr auto; padding: 12px; border-radius: 14px; }
   .chat-header h1{ font-size: 18px; }
   .chat-header p{ font-size: 12px; }
+
   .msg .bubble{ max-width: 90%; font-size: 15px; line-height: 1.45; }
   .drop-zone{ font-size: 12px; padding: 8px; }
   .preview img{ max-height: 60px; max-width: 120px; }
+
+  /* 🔥 Fallback: si sticky falla en Android, usamos fixed y damos padding al feed */
   .chat-input{
+    position: fixed;
+    left: 0; right: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
+    margin: 0 auto;
+    max-width: 980px;
+    transform: translateZ(0);
     grid-template-columns: auto auto 1fr auto; gap: 8px; padding: 8px;
     border-radius: 14px; backdrop-filter: saturate(140%) blur(8px);
   }
+  .chat-messages { padding-bottom: 90px; }
+
   .icon-btn{ width: var(--tap); height: var(--tap); border-radius: 12px; font-size: 18px; }
   #user-input{ height: var(--tap); padding: 12px; font-size: 15px; border-radius: 10px; }
   .send-btn{ height: var(--tap); padding: 0 14px; font-size: 14px; border-radius: 10px; }
@@ -294,7 +310,7 @@ html[data-theme="light"] .disclaimer {
 }
 
 @media (max-height: 480px) and (orientation: landscape){
-  .chat-messages{ max-height: calc(100dvh - 200px); }
+  .chat-messages{ max-height: calc(100vh - 200px); }
 }
 
 @media (prefers-reduced-motion: reduce){
