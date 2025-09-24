@@ -4,70 +4,68 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Asistente Hogar</title>
-
-  <!-- PWA (opcional si ya lo tenés) -->
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#0f1116" />
-
   <link rel="stylesheet" href="/style.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0e1116" />
 </head>
 <body>
-  <div class="chat-container">
+  <div class="shell">
     <!-- Header -->
     <header class="chat-header">
-      <div>
+      <div class="brand">
         <h1>Asistente Hogar</h1>
         <p>Soluciones simples para tu casa (AR)</p>
       </div>
-      <button id="theme-toggle" class="theme-btn" title="Cambiar tema">🌓</button>
-      <a id="health-check" class="theme-btn" href="#" onclick="return false;">Health</a>
+      <button id="theme-toggle" class="chip">🌓</button>
+      <a id="health-check" class="chip" href="#" onclick="return false;">Health</a>
     </header>
 
-    <!-- Feed de mensajes -->
-    <main class="chat-messages" id="chat-messages">
+    <!-- Feed -->
+    <main id="chat-messages" class="chat-messages">
       <div class="msg bot">
         <div class="avatar">🤖</div>
         <div class="bubble">¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte con tu hogar?</div>
       </div>
-
-      <div id="error-banner" class="error-banner hidden"></div>
+      <div id="error-banner" class="error hidden"></div>
       <div id="typing" class="typing hidden">Escribiendo</div>
     </main>
 
-    <!-- Dropzone opcional -->
-    <div class="drop-zone" id="drop-zone">Arrastrá una imagen aquí</div>
+    <!-- Drop zone -->
+    <div id="drop-zone" class="drop">Arrastrá una imagen aquí</div>
 
-    <!-- Composer fijo (queda SOBRE el disclaimer) -->
-    <div class="chat-input">
-      <!-- Inputs reales ocultos -->
+    <!-- Preview (fijo sobre el composer) -->
+    <div id="image-preview" class="preview hidden">
+      <img alt="preview" />
+      <button id="clear-image" class="btn-ghost" title="Quitar">✕</button>
+    </div>
+
+    <!-- Composer (fijo) -->
+    <div class="composer">
+      <!-- inputs reales ocultos -->
       <input id="file-upload-camera" type="file" accept="image/*" capture="environment" hidden />
       <input id="file-upload-clip"   type="file" accept="image/*" hidden />
 
-      <!-- Botones visuales -->
-      <label for="file-upload-camera" class="icon-btn" title="Usar cámara">📷</label>
-      <label for="file-upload-clip"   class="icon-btn" title="Adjuntar desde galería">📎</label>
-      <button id="geo-button" class="icon-btn" title="Buscar ferreterías abiertas cerca">📍</button>
+      <!-- grupo de iconos -->
+      <div class="icons">
+        <label for="file-upload-camera" class="icon" title="Usar cámara">📷</label>
+        <label for="file-upload-clip"   class="icon" title="Adjuntar foto">📎</label>
+        <button id="geo-button" class="icon" title="Ferreterías abiertas cerca">📍</button>
+      </div>
 
-      <!-- Campo de texto -->
-      <input id="user-input" type="text" placeholder="Escribí tu consulta..." autocomplete="off" />
+      <!-- input pill -->
+      <input id="user-input" class="pill" type="text" placeholder="Escribí tu consulta..." autocomplete="off" />
 
-      <!-- Enviar -->
-      <button id="send-button" class="send-btn">Enviar ➤</button>
+      <!-- enviar -->
+      <button id="send-button" class="btn-primary">Enviar ➤</button>
     </div>
 
-    <!-- Preview imagen -->
-    <div id="image-preview" class="preview hidden">
-      <img alt="preview" />
-      <button id="clear-image" class="clear-btn" title="Quitar">✕</button>
-    </div>
-
-    <!-- Disclaimer fijo al borde inferior (debajo del composer) -->
+    <!-- Disclaimer (fijo abajo) -->
     <div class="disclaimer">
       ⚠️ Este asistente brinda sugerencias caseras para el hogar. No reemplaza el trabajo de un profesional.
       En situaciones de riesgo eléctrico, de gas o sanitarias, contactá con un especialista calificado.
     </div>
 
-    <!-- Footer (texto informativo) -->
+    <!-- Footer informativo -->
     <footer class="footer">
       Hecho con ❤️ por ByB • Esta app puede demorar unos segundos en despertar en Render.
     </footer>
