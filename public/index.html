@@ -2,25 +2,17 @@
 <html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Asistente Hogar</title>
 
-  <!-- Fuente Inter (opcional pero recomendado) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-
-  <!-- Manifest PWA (si lo usás) -->
+  <!-- PWA (opcional si ya lo tenés) -->
   <link rel="manifest" href="/manifest.json" />
-<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-192.jpeg" />
-<link rel="apple-touch-icon" href="/icons/icon-192.jpeg" />
+  <meta name="theme-color" content="#0f1116" />
 
-  <!-- CSS con anti-caché -->
-  <link rel="stylesheet" href="/style.css?v=14" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <div class="chat-container">
-
     <!-- Header -->
     <header class="chat-header">
       <div>
@@ -28,70 +20,59 @@
         <p>Soluciones simples para tu casa (AR)</p>
       </div>
       <button id="theme-toggle" class="theme-btn" title="Cambiar tema">🌓</button>
-      <a href="/health" target="_blank" id="health-check" title="Health check">Health</a>
+      <a id="health-check" class="theme-btn" href="#" onclick="return false;">Health</a>
     </header>
 
-    <!-- Mensajes -->
-    <main id="chat-messages" class="chat-messages" aria-live="polite">
+    <!-- Feed de mensajes -->
+    <main class="chat-messages" id="chat-messages">
       <div class="msg bot">
         <div class="avatar">🤖</div>
-        <div class="bubble">
-          ¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte con tu hogar?
-        </div>
+        <div class="bubble">¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte con tu hogar?</div>
       </div>
+
+      <div id="error-banner" class="error-banner hidden"></div>
+      <div id="typing" class="typing hidden">Escribiendo</div>
     </main>
 
-    <!-- Estado -->
-    <div id="typing" class="typing hidden" aria-hidden="true">🤖 escribiendo</div>
-    <div id="error-banner" class="error-banner hidden" role="alert"></div>
+    <!-- Dropzone opcional -->
+    <div class="drop-zone" id="drop-zone">Arrastrá una imagen aquí</div>
 
-    <!-- Zona de arrastrar/soltar -->
-    <div id="drop-zone" class="drop-zone" aria-label="Arrastrá una imagen aquí">
-      Arrastrá una imagen aquí
-    </div>
-
-    <!-- Preview imagen seleccionada -->
-    <div id="image-preview" class="hidden preview" aria-live="polite">
-      <img src="" alt="Vista previa de la imagen" />
-      <button id="clear-image" class="clear-btn" title="Quitar imagen">❌</button>
-    </div>
-
-    <!-- Composer -->
+    <!-- Composer fijo (queda SOBRE el disclaimer) -->
     <div class="chat-input">
-      <!-- Cámara (abre cámara en móviles) -->
-      <label for="file-upload-camera" class="icon-btn" title="Sacar foto">📸</label>
+      <!-- Inputs reales ocultos -->
       <input id="file-upload-camera" type="file" accept="image/*" capture="environment" hidden />
+      <input id="file-upload-clip"   type="file" accept="image/*" hidden />
 
-      <!-- Clip (galería/archivos) -->
-      <label for="file-upload-clip" class="icon-btn" title="Adjuntar desde archivos/galería">📎</label>
-      <input id="file-upload-clip" type="file" accept="image/*" hidden />
+      <!-- Botones visuales -->
+      <label for="file-upload-camera" class="icon-btn" title="Usar cámara">📷</label>
+      <label for="file-upload-clip"   class="icon-btn" title="Adjuntar desde galería">📎</label>
+      <button id="geo-button" class="icon-btn" title="Buscar ferreterías abiertas cerca">📍</button>
 
-      <!-- (Opcional) Ubicación rápida para lugares cercanos -->
-      <button id="geo-button" class="icon-btn" title="Usar mi ubicación">📍</button>
-
-      <!-- Texto -->
-      <input
-        type="text"
-        id="user-input"
-        placeholder="Escribí tu consulta..."
-        autocomplete="off"
-        aria-label="Mensaje para el asistente"
-      />
+      <!-- Campo de texto -->
+      <input id="user-input" type="text" placeholder="Escribí tu consulta..." autocomplete="off" />
 
       <!-- Enviar -->
-      <button id="send-button" class="send-btn" title="Enviar">Enviar ➤</button>
+      <button id="send-button" class="send-btn">Enviar ➤</button>
     </div>
-  </div>
-  <div class="disclaimer">
-  ⚠️ Este asistente brinda sugerencias caseras para el hogar.  
-  No reemplaza el trabajo de un profesional.  
-  En situaciones de riesgo eléctrico, de gas o sanitarias, contactá con un especialista calificado.
-</div>
-  <footer class="footer">
-    Hecho con ❤️ por ByB • Esta app puede demorar unos segundos en despertar en Render.
-  </footer>
 
-  <!-- JS con anti-caché -->
-  <script src="/script.js?v=14" defer></script>
+    <!-- Preview imagen -->
+    <div id="image-preview" class="preview hidden">
+      <img alt="preview" />
+      <button id="clear-image" class="clear-btn" title="Quitar">✕</button>
+    </div>
+
+    <!-- Disclaimer fijo al borde inferior (debajo del composer) -->
+    <div class="disclaimer">
+      ⚠️ Este asistente brinda sugerencias caseras para el hogar. No reemplaza el trabajo de un profesional.
+      En situaciones de riesgo eléctrico, de gas o sanitarias, contactá con un especialista calificado.
+    </div>
+
+    <!-- Footer (texto informativo) -->
+    <footer class="footer">
+      Hecho con ❤️ por ByB • Esta app puede demorar unos segundos en despertar en Render.
+    </footer>
+  </div>
+
+  <script src="/script.js"></script>
 </body>
 </html>
