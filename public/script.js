@@ -1,4 +1,5 @@
-// ====== Config & refs ======
+// public/script.js
+
 let sessionId = null;
 let imageFile = null;
 
@@ -8,11 +9,9 @@ const errorEl   = document.getElementById('error-banner');
 const previewEl = document.getElementById('image-preview');
 const previewImg= previewEl?.querySelector('img');
 
-const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-  ? (location.port ? `http://localhost:${location.port}` : 'http://localhost:3000')
-  : `${location.origin}`;
+const API_URL = location.origin;
 
-// ====== Utils ======
+/* ===== Utilidades ===== */
 function showError(msg) {
   if (!errorEl) return;
   errorEl.textContent = msg;
@@ -20,8 +19,7 @@ function showError(msg) {
   setTimeout(() => errorEl.classList.add('hidden'), 5000);
 }
 function setTyping(on) {
-  if (!typingEl) return;
-  typingEl.classList.toggle('hidden', !on);
+  typingEl?.classList.toggle('hidden', !on);
 }
 function appendTextMessage(sender, text) {
   const row = document.createElement('div');
@@ -67,7 +65,6 @@ function toBase64(file) {
     r.readAsDataURL(file);
   });
 }
-// compresión para fotos móviles (reduce ancho y peso)
 async function compressImage(dataUrl, maxW = 1280, quality = 0.7) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -75,17 +72,16 @@ async function compressImage(dataUrl, maxW = 1280, quality = 0.7) {
       const scale = Math.min(1, maxW / img.width);
       const w = Math.round(img.width * scale);
       const h = Math.round(img.height * scale);
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      const cvs = document.createElement('canvas');
+      cvs.width = w; cvs.height = h;
+      cvs.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(cvs.toDataURL('image/jpeg', quality));
     };
     img.src = dataUrl;
   });
 }
 
-// ====== Sesión ======
+/* ===== Sesión ===== */
 async function ensureSession() {
   const saved = localStorage.getItem('bot-ia:sessionId');
   if (saved) { sessionId = saved; return; }
@@ -110,7 +106,7 @@ function setPreview(file) {
   }
 }
 
-// ====== GEO & PLACES ======
+/* ===== GEO ===== */
 function getUserLocation() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject('Geolocalización no soportada');
@@ -121,19 +117,18 @@ function getUserLocation() {
     );
   });
 }
-async function findNearbyPlaces({ q = 'ferreteria', lat, lng }) {
+async function findNearbyPlacesByTypes({ types = 'ferreteria,pintureria,corralon,electricidad', lat, lng, radius = 3000 }) {
   const url = new URL(`${API_URL}/places`);
   url.searchParams.set('lat', lat);
   url.searchParams.set('lng', lng);
-  url.searchParams.set('q', q);
-  url.searchParams.set('openNow', '1');
-  url.searchParams.set('radius', '2500');
+  url.searchParams.set('types', types);
+  url.searchParams.set('radius', String(radius));
   const r = await fetch(url.toString());
   const data = await r.json();
   if (!r.ok) throw new Error(data?.error || 'Error en /places');
   return data;
 }
-function appendPlacesMessage(placesData, queryLabel = 'ferreterías abiertas cerca') {
+function appendPlacesMessageMulti(placesData) {
   const row = document.createElement('div');
   row.className = 'msg bot';
   const avatar = document.createElement('div');
@@ -142,20 +137,21 @@ function appendPlacesMessage(placesData, queryLabel = 'ferreterías abiertas cer
   bubble.className = 'bubble';
 
   if (!placesData?.results?.length) {
-    bubble.textContent = `No encontré ${queryLabel} en este radio. Probá ampliar el rango o buscar en Google Maps.`;
+    bubble.textContent = 'No encontré comercios en este radio. Probá ampliar el rango o buscar en Google Maps.';
   } else {
     const title = document.createElement('div');
     title.style.fontWeight = '700';
     title.style.marginBottom = '6px';
-    title.textContent = `Encontré ${placesData.count} ${queryLabel}:`;
+    title.textContent = `Encontré ${placesData.count} lugares cerca:`;
     bubble.appendChild(title);
 
     placesData.results.forEach((p, i) => {
       const item = document.createElement('div');
       item.style.margin = '6px 0';
+      const cat = p.category ? ` · ${p.category}` : '';
       item.innerHTML = `
-        <div>${i+1}. <strong>${p.name}</strong> ${p.rating ? `⭐ ${p.rating}` : ''} ${p.open_now === true ? '• Abierto' : p.open_now === false ? '• Cerrado' : ''}</div>
-        <div style="color:#a9afc1">${p.address || ''}</div>
+        <div>${i+1}. <strong>${p.name}</strong>${cat}</div>
+        <div style="color:#a9afc1">${p.address || ''} ${p.distance_km ? `· ${p.distance_km.toFixed(1)} km` : ''}</div>
         <div><a href="${p.link}" target="_blank" rel="noopener">Ver en Google Maps</a></div>
       `;
       bubble.appendChild(item);
@@ -168,8 +164,8 @@ function appendPlacesMessage(placesData, queryLabel = 'ferreterías abiertas cer
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-// ====== Envío ======
-let sending = false; // debounce
+/* ===== Envío ===== */
+let sending = false;
 async function sendMessage() {
   if (sending) return;
   sending = true;
@@ -177,7 +173,6 @@ async function sendMessage() {
   const input = document.getElementById('user-input');
   const text = input.value.trim();
 
-  // Capturar dataURL de la imagen ANTES de limpiar
   let imgDataUrl = null;
   if (imageFile) {
     imgDataUrl = await toBase64(imageFile);
@@ -186,45 +181,43 @@ async function sendMessage() {
 
   if (!text && !imgDataUrl) { sending = false; return; }
 
-  // pintar mensaje del usuario
   if (text) appendTextMessage('user', text);
   if (imgDataUrl) appendImageMessage('user', imgDataUrl);
 
-  // limpiar UI
   input.value = '';
   setPreview(null);
 
   try {
     await ensureSession();
 
-    // Heurística: si pide ferretería abierta cerca, respondemos con listado
-    const textLower = (text || '').toLowerCase();
-    const wantsFerreteria =
-      /ferreter[ií]a|herrajer[ií]a/.test(textLower) &&
-      /abiert(a|o)|ahora|cerca/.test(textLower);
+    // Heurística simple: si pide lugares, mostrar lista (incluye electricidad)
+    const t = (text || '').toLowerCase();
+    const buscaLugares =
+      /(ferreter[ií]a|pinturer[ií]a|corral[oó]n|electricidad)/.test(t) &&
+      /(abiert[oa]|cerca|d[óo]nde|encontrar)/.test(t);
 
-    if (wantsFerreteria) {
+    if (buscaLugares) {
       try {
         setTyping(true);
         const geo = await getUserLocation();
-        const data = await findNearbyPlaces({ q: 'ferreteria', lat: geo.lat, lng: geo.lng });
+        const data = await findNearbyPlacesByTypes({
+          types: 'ferreteria,pintureria,corralon,electricidad',
+          lat: geo.lat,
+          lng: geo.lng,
+          radius: 3000
+        });
         setTyping(false);
-        appendPlacesMessage(data, 'ferreterías abiertas cerca');
+        appendPlacesMessageMulti(data);
       } catch (e) {
         setTyping(false);
         showError('No pude obtener tu ubicación. Activá permisos o probá en Google Maps.');
       }
-      // seguimos con IA igualmente
+      // igual seguimos con IA
     }
 
     setTyping(true);
 
-    const payload = {
-      sessionId,
-      message: text || '',
-      imageData: imgDataUrl
-    };
-
+    const payload = { sessionId, message: text || '', imageData: imgDataUrl };
     const res = await fetch(`${API_URL}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -238,12 +231,10 @@ async function sendMessage() {
     setTyping(false);
 
     if (!res.ok) {
-      // 429 con plan B (ráfaga vs límite diario)
       if (res.status === 429 && data) {
         const btn = document.getElementById('send-button');
         const origTxt = btn.textContent;
 
-        // Límite diario agotado
         if (data.exhausted) {
           showError('Llegaste al límite diario gratuito. Probá mañana o habilitá billing.');
           btn.disabled = true;
@@ -252,8 +243,6 @@ async function sendMessage() {
           sending = false;
           return;
         }
-
-        // Límite momentáneo (ráfaga)
         if (data.retryAfter) {
           let left = data.retryAfter;
           btn.disabled = true;
@@ -287,13 +276,13 @@ async function sendMessage() {
   } catch (err) {
     setTyping(false);
     console.error(err);
-    showError('No se pudo contactar al servidor. Verificá que esté encendido.');
+    showError('No se pudo contactar al servidor.');
   } finally {
     sending = false;
   }
 }
 
-// ====== Eventos UI ======
+/* ===== Eventos UI ===== */
 document.getElementById('send-button')?.addEventListener('click', sendMessage);
 document.getElementById('user-input')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -301,28 +290,45 @@ document.getElementById('user-input')?.addEventListener('keydown', (e) => {
     sendMessage();
   }
 });
-
-// Cámara (móvil)
 document.getElementById('file-upload-camera')?.addEventListener('change', (e) => {
   const f = e.target.files?.[0];
   if (f && f.type.startsWith('image/')) setPreview(f);
 });
 
-// Botón ubicación en header
-document.getElementById('nearby-button')?.addEventListener('click', async () => {
+// Botón ubicación del header (muestra ciudad y lista por rubros)
+document.getElementById('nearby-button')?.addEventListener('click', async (ev) => {
+  const btn = ev.currentTarget;
   try {
     setTyping(true);
     const geo = await getUserLocation();
-    const data = await findNearbyPlaces({ q: 'ferreteria', lat: geo.lat, lng: geo.lng });
+
+    // Mostrar ciudad/barrio en el botón
+    try {
+      const url = new URL(`${API_URL}/geocode/reverse`);
+      url.searchParams.set('lat', geo.lat);
+      url.searchParams.set('lng', geo.lng);
+      const r1 = await fetch(url);
+      const d1 = await r1.json();
+      const cityLabel = d1?.city || '';
+      if (cityLabel) btn.textContent = `📍 ${cityLabel}`;
+    } catch {}
+
+    // Buscar múltiples rubros (incluye electricidad)
+    const data = await findNearbyPlacesByTypes({
+      types: 'ferreteria,pintureria,corralon,electricidad',
+      lat: geo.lat,
+      lng: geo.lng,
+      radius: 3000
+    });
     setTyping(false);
-    appendPlacesMessage(data, 'ferreterías abiertas cerca');
+    appendPlacesMessageMulti(data);
   } catch (e) {
     setTyping(false);
     showError('No pude obtener tu ubicación. Activá permisos del navegador.');
   }
 });
 
-// Tema claro/oscuro (persistente)
+/* ===== Tema claro/oscuro ===== */
 (function themeBoot(){
   const storedTheme = localStorage.getItem('bot-ia:theme');
   if (storedTheme) {
@@ -341,7 +347,7 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
   localStorage.setItem('bot-ia:theme', next);
 });
 
-// Deshabilitar “Enviar” si marcamos límite diario en esta sesión
+/* ===== Lock si agotó límite diario ===== */
 (function lockIfDailyExhausted(){
   const exhausted = localStorage.getItem('bot-ia:daily-exhausted') === '1';
   if (!exhausted) return;
@@ -352,14 +358,12 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
   }
 })();
 
-// ====== Service Worker (PWA) ======
+/* ===== PWA (si tenés sw.js) ===== */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
-    .then(() => console.log('✅ Service Worker registrado'))
-    .catch(err => console.error('❌ Error registrando SW:', err));
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
 
-// ====== Fix teclado móvil (Android/iOS): visualViewport + --vh ======
+/* ===== Fix teclado móvil + --vh ===== */
 (function mobileKeyboardFix() {
   const html = document.documentElement;
   const messages = document.getElementById('chat-messages');
@@ -375,7 +379,6 @@ if ('serviceWorker' in navigator) {
   window.visualViewport?.addEventListener('resize', applyVH);
   window.addEventListener('orientationchange', () => setTimeout(applyVH, 150));
 
-  // asegurar que el composer quede visible al abrir teclado
   ['focus', 'click'].forEach(ev => {
     input?.addEventListener(ev, () => {
       setTimeout(() => {
@@ -386,6 +389,19 @@ if ('serviceWorker' in navigator) {
   });
 })();
 
-// ====== Boot ======
-ensureSession().catch(() => {});
+/* ===== Drop zone básica ===== */
+(function dropzone(){
+  const dz = document.getElementById('drop-zone');
+  if (!dz) return;
+  dz.addEventListener('dragover', (e)=>{ e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', ()=> dz.classList.remove('dragover'));
+  dz.addEventListener('drop', (e)=>{
+    e.preventDefault(); dz.classList.remove('dragover');
+    const f = e.dataTransfer?.files?.[0];
+    if (f && f.type.startsWith('image/')) setPreview(f);
+  });
+})();
+
+/* ===== Boot ===== */
+ensureSession().catch(()=>{});
 document.getElementById('clear-image')?.addEventListener('click', () => setPreview(null));
