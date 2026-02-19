@@ -1,75 +1,50 @@
-<!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<!doctype html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Asistente Hogar</title>
-  <link rel="stylesheet" href="/style.css" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#0e1116" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="shell">
-    <!-- Header -->
-    <header class="chat-header">
-      <div class="brand">
+  <main class="app">
+    <header class="app-header">
+      <div class="app-title">
         <h1>Asistente Hogar</h1>
         <p>Soluciones simples para tu casa (AR)</p>
       </div>
-
-      <!-- NUEVO: lugares cerca -->
-      <button id="nearby-button" class="chip" title="Ferreterías abiertas cerca">📍 Cerca</button>
-
-      <button id="theme-toggle" class="chip" title="Cambiar tema">🌓</button>
-      <a id="health-check" class="chip" href="#" onclick="return false;">Health</a>
+      <div class="header-actions">
+        <button id="locBtn" class="chip"><span>📍</span> Cerca</button>
+      </div>
     </header>
 
-    <!-- Feed -->
-    <main id="chat-messages" class="chat-messages">
-      <div class="msg bot">
-        <div class="avatar">🤖</div>
-        <div class="bubble">¡Hola! Soy tu asistente de IA. ¿En qué puedo ayudarte con tu hogar?</div>
-      </div>
-      <div id="error-banner" class="error hidden"></div>
-      <div id="typing" class="typing hidden">Escribiendo</div>
-    </main>
+    <section id="chat" class="chat"></section>
 
-    <!-- Drop zone -->
-    <div id="drop-zone" class="drop">Arrastrá una imagen aquí</div>
-
-    <!-- Preview (fijo sobre el composer) -->
-    <div id="image-preview" class="preview hidden">
-      <img alt="preview" />
-      <button id="clear-image" class="btn-ghost" title="Quitar">✕</button>
+    <div id="dropzone" class="dropzone" aria-label="Arrastrá una imagen aquí">
+      Arrastrá una imagen aquí
     </div>
 
-    <!-- Composer (fijo) -->
-    <div class="composer">
-      <!-- inputs reales ocultos -->
-      <input id="file-upload-camera" type="file" accept="image/*" capture="environment" hidden />
-      <!-- 1 icono: cámara -->
-      <label for="file-upload-camera" class="icon" title="Usar cámara">📷</label>
+    <footer class="composer">
+      <label class="icon-btn" title="Adjuntar imagen">
+        <input id="attachInput" type="file" accept="image/*" hidden />
+        <span>📷</span>
+      </label>
+      <label class="icon-btn" title="Cámara">
+        <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden />
+        <span>🎥</span>
+      </label>
 
-      <!-- input “pill” con LTR para evitar espejo -->
-      <input id="user-input" class="pill" type="text" dir="ltr"
-             placeholder="Escribí tu consulta..." autocomplete="off" />
+      <textarea id="messageInput" rows="1" placeholder="Escribí tu consulta… (Enter para enviar, Shift+Enter salto)"></textarea>
 
-      <!-- enviar -->
-      <button id="send-button" class="btn-primary">Enviar ➤</button>
-    </div>
-
-    <!-- Disclaimer (fijo abajo) -->
-    <div class="disclaimer">
-      ⚠️ Este asistente brinda sugerencias caseras para el hogar. No reemplaza el trabajo de un profesional.
-      En situaciones de riesgo eléctrico, de gas o sanitarias, contactá con un especialista calificado.
-    </div>
-
-    <!-- Footer informativo -->
-    <footer class="footer">
-      Hecho con ❤️ por ByB • Esta app puede demorar unos segundos en despertar en Render.
+      <button id="sendBtn" type="button" class="send-btn">Enviar ➤</button>
     </footer>
-  </div>
 
-  <script src="/script.js"></script>
+    <p class="disclaimer">
+      ⚠️ Este asistente brinda sugerencias caseras para el hogar. No reemplaza el trabajo de un profesional. En
+      situaciones de riesgo eléctrico, de gas o sanitarias, contactá con un especialista calificado.
+    </p>
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
