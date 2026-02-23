@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const fetch = require('node-fetch'); // <--- ESTA LÍNEA ARREGLA EL ERROR DE RENDER
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -21,7 +22,7 @@ app.post('/chat', async (req, res) => {
         const mapsKey = process.env.GOOGLE_MAPS_API_KEY;
         const latLong = "-31.2674,-60.7622"; 
 
-        // 1. IA ULTRA-RESTRINGIDA (No puede decir NADA de direcciones)
+        // 1. IA ULTRA-RESTRINGIDA
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -41,7 +42,7 @@ app.post('/chat', async (req, res) => {
 
         let infoExtra = "";
 
-        // 2. BÚSQUEDA DINÁMICA (Aquí es donde aparece la magia interactiva)
+        // 2. BÚSQUEDA DINÁMICA
         const rubros = ["ferreteria", "canilla", "caño", "arena", "cal", "corralon", "gomeria", "farmacia", "panaderia"];
         const busquedaDetectada = rubros.find(r => new RegExp(r, 'i').test(message));
 
@@ -52,6 +53,7 @@ app.post('/chat', async (req, res) => {
 
             if (pData.results && pData.results.length > 0) {
                 const localesHtml = pData.results.slice(0, 3).map(l => {
+                    // CORREGIDO: Link de mapas con formato correcto
                     const linkLocal = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l.name)}&query_place_id=${l.place_id}`;
                     return `
                     <div style="margin-bottom: 12px; border-left: 4px solid #007bff; padding: 10px; background: #f9f9f9; border-radius: 0 8px 8px 0;">
@@ -79,7 +81,7 @@ app.post('/chat', async (req, res) => {
             }
         }
 
-        // 3. PROFESIONALES (WhatsApp)
+        // 3. PROFESIONALES
         if (/canilla|agua|baño|plomero/i.test(message)) {
             infoExtra += `
             <div style="margin-top: 15px; border: 1px solid #28a745; border-radius: 12px; background: #fcfcfc; padding: 15px;">
@@ -102,4 +104,4 @@ app.post('/chat', async (req, res) => {
 });
 
 app.get('/', (req, res) => { res.sendFile(path.resolve(__dirname, 'public', 'index.html')); });
-app.listen(PORT, () => console.log(`🚀 NelsonBot Corregido en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 NelsonBot Funcionando en puerto ${PORT}`));
