@@ -1,67 +1,81 @@
 document.addEventListener('DOMContentLoaded', () => {
     const chatContainer = document.getElementById('chat');
-    const userInput = document.getElementById('messageInput');
+    const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     const locBtn = document.getElementById('locBtn');
 
-    let userLocation = null; // Guardamos la ubicación aquí
-
-    function appendMessage(role, text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', role);
-        const contentDiv = document.createElement('div');
-        contentDiv.classList.add('bubble');
-        contentDiv.innerHTML = text; // Permite ver el mapa
-        messageDiv.appendChild(contentDiv);
-        chatContainer.appendChild(messageDiv);
+    // Función para agregar mensajes al chat
+    function appendMessage(content, side) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${side}`;
+        
+        // side es 'user' o 'bot'
+        // innerHTML es CLAVE para que el mapa y botones de WhatsApp funcionen
+        msgDiv.innerHTML = content;
+        
+        chatContainer.appendChild(msgDiv);
+        
+        // Auto-scroll hacia abajo
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    async function sendMessage() {
-        const message = userInput.value.trim();
-        if (!message) return;
+    // Función para enviar el mensaje al servidor
+    async function handleSend() {
+        const text = messageInput.value.trim();
+        if (!text) return;
 
-        appendMessage('user', message);
-        userInput.value = '';
+        // 1. Mostrar mensaje del usuario en pantalla
+        appendMessage(text, 'user');
+        messageInput.value = '';
+        messageInput.style.height = 'auto'; // Resetear altura del textarea
+
+        // 2. Mostrar indicador de carga "Escribiendo..."
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message bot loading';
+        loadingDiv.innerText = '⌛ Buscando en Nelson...';
+        chatContainer.appendChild(loadingDiv);
 
         try {
             const response = await fetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // ✅ ENVIAMOS LA UBICACIÓN AL SERVIDOR
-                body: JSON.stringify({ 
-                    message, 
-                    lat: userLocation ? userLocation.lat : null, 
-                    lng: userLocation ? userLocation.lng : null 
-                })
+                body: JSON.stringify({ message: text })
             });
 
             const data = await response.json();
-            // ✅ CAMBIADO: Usamos data.reply porque así lo definiste en index.js
-            appendMessage('assistant', data.reply);
+            
+            // Quitar indicador de carga
+            chatContainer.removeChild(loadingDiv);
+
+            // 3. Mostrar respuesta del Bot (con mapa y botones)
+            appendMessage(data.reply, 'bot');
 
         } catch (error) {
-            appendMessage('assistant', '❌ Error de conexión.');
+            console.error("Error al conectar con el servidor:", error);
+            chatContainer.removeChild(loadingDiv);
+            appendMessage("❌ Error de conexión. Intentá de nuevo.", 'bot');
         }
     }
 
-    locBtn.addEventListener('click', () => {
-        if (navigator.geolocation) {
-            appendMessage('assistant', '⌛ Obteniendo ubicación...');
-            navigator.geolocation.getCurrentPosition((pos) => {
-                userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                appendMessage('assistant', '✅ Ubicación fijada. Ahora buscá lo que necesites.');
-                locBtn.style.background = "#28a745"; // Color verde de éxito
-                locBtn.innerText = "📍 Ubicado";
-            });
+    // Evento Click
+    sendBtn.addEventListener('click', handleSend);
+
+    // Evento Enter (sin Shift)
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
         }
     });
 
-    sendBtn.addEventListener('click', sendMessage);
-    userInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
+    // Auto-ajustar altura del textarea mientras escriben
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // Botón de ubicación (solo decorativo en este caso)
+    locBtn.addEventListener('click', () => {
+        alert("Estás viendo resultados reales de Nelson, Santa Fe.");
     });
 });

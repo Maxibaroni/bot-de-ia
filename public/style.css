@@ -166,3 +166,43 @@ textarea {
   .chat { padding: 15px 10px; }
   .bubble { max-width: 90%; font-size: 15px; }
 }
+/* Estilos para que el contenido dinámico se vea prolijo */
+.message {
+    margin-bottom: 15px;
+    max-width: 85%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    word-wrap: break-word;
+}
+
+.message.user {
+    background-color: #007bff;
+    color: white;
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+.message.bot {
+    background-color: #f1f1f1;
+    color: #333;
+    align-self: flex-start;
+}
+
+/* IMPORTANTE: Esto hace que las imágenes de los mapas no se salgan del globo de texto */
+.message.bot img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 10px 0;
+    display: block;
+}
+
+.message.bot a {
+    text-decoration: none;
+}
+
+.loading {
+    font-style: italic;
+    font-size: 0.9em;
+    color: #888;
+}
