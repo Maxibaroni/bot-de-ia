@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Asistente Hogar</title>
+  <title>Asistente Hogar - Nelson</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,37 +11,34 @@
     <header class="app-header">
       <div class="app-title">
         <h1>Asistente Hogar</h1>
-        <p>Soluciones simples para tu casa (AR)</p>
+        <p>Expertos en reparaciones</p>
       </div>
-      <div class="header-actions">
-        <button id="locBtn" class="chip"><span>📍</span> Cerca</button>
-      </div>
+      <button id="locBtn" class="chip">
+        <span>📍</span> Nelson, SF
+      </button>
     </header>
 
-    <section id="chat" class="chat"></section>
-
-    <div id="dropzone" class="dropzone" aria-label="Arrastrá una imagen aquí">
-      Arrastrá una imagen aquí
-    </div>
+    <section id="chat" class="chat">
+      </section>
 
     <footer class="composer">
-      <label class="icon-btn" title="Adjuntar imagen">
-        <input id="attachInput" type="file" accept="image/*" hidden />
-        <span>📷</span>
-      </label>
-      <label class="icon-btn" title="Cámara">
-        <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden />
-        <span>🎥</span>
-      </label>
+      <div class="input-wrapper">
+        <label class="icon-btn" title="Adjuntar imagen">
+          <input id="attachInput" type="file" accept="image/*" hidden />
+          <span>📷</span>
+        </label>
+        
+        <textarea id="messageInput" rows="1" placeholder="Escribí tu consulta..."></textarea>
+      </div>
 
-      <textarea id="messageInput" rows="1" placeholder="Escribí tu consulta… (Enter para enviar, Shift+Enter salto)"></textarea>
-
-      <button id="sendBtn" type="button" class="send-btn">Enviar ➤</button>
+      <button id="sendBtn" type="button" class="send-btn">
+        Enviar
+      </button>
     </footer>
 
     <p class="disclaimer">
-      ⚠️ Este asistente brinda sugerencias caseras para el hogar. No reemplaza el trabajo de un profesional. En
-      situaciones de riesgo eléctrico, de gas o sanitarias, contactá con un especialista calificado.
+      Área de cobertura: Nelson y alrededores. <br>
+      Sugerencias orientativas, consulte a un profesional.
     </p>
   </main>
 
